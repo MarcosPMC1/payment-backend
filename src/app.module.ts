@@ -16,7 +16,9 @@ import { AuthModule } from './auth/auth.module';
         database: configService.getOrThrow('POSTGRES_DATABASE'),
         username: configService.getOrThrow('POSTGRES_USER'),
         password: configService.getOrThrow('POSTGRES_PASSWORD'),
-        port: 5432
+        port: 5432,
+        autoLoadEntities: true,
+        synchronize: true
       })
     }),
     AuthModule

@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { LoginDto } from './dto/login-auth.dto';
 import * as bcrypt from 'bcrypt'
 import { JwtService } from '@nestjs/jwt';
+import { UserDto } from './dto/registrate-auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -16,16 +17,20 @@ export class AuthService {
 
     async Login(data: LoginDto){
         const user = await this.userRepository.findOne({ where: { email: data.email } })
-        if(!user || bcrypt.compareSync(data.password, user.password)){
+        if(!user || !bcrypt.compareSync(data.password, user.password)){
             throw new UnauthorizedException()
         }
         const payload = { sub: user.id, email: user.email }
         return {
-            access_token: this.jwtService.signAsync(payload, { expiresIn: '15min', algorithm: 'RS256' })
+            access_token: this.jwtService.sign(payload, { expiresIn: '15min', algorithm: 'RS256' })
         }
     }
 
-    async Register(data: any){
-        
+    async Register(data: UserDto){
+        const { password, ...user } = await this.userRepository.save(this.userRepository.create({
+            ...data,
+            password: bcrypt.hashSync(data.password, 11)
+        }))
+        return user
     }
 }

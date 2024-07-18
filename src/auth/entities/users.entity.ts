@@ -6,7 +6,7 @@ export class User{
     id: string
 
     @Column('varchar')
-    fullname: string
+    name: string
 
     @Column({ type: 'varchar', length: 14, unique: true })
     document: string

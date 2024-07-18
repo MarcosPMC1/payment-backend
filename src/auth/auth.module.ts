@@ -4,13 +4,15 @@ import { AuthController } from './auth.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/users.entity';
 import { JwtModule } from '@nestjs/jwt';
+import { readFileSync } from 'node:fs'
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
     JwtModule.register({
       global: true,
-      secret: 'teste'
+      privateKey: readFileSync('./key'),
+      publicKey: readFileSync('./key.pub')
     })
   ],
   controllers: [AuthController],
