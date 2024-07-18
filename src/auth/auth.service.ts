@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/users.entity';
 import { Repository } from 'typeorm';
@@ -31,6 +31,12 @@ export class AuthService {
             ...data,
             password: bcrypt.hashSync(data.password, 11)
         }))
+        .catch(err => {
+            if (err.code == '23505') {
+                throw new BadRequestException('User is already used');
+            }
+            throw new InternalServerErrorException();
+        })
         return user
     }
 }
