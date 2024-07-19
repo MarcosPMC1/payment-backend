@@ -4,7 +4,8 @@ import { QueryFailedError, Repository } from 'typeorm';
 import { User } from './entities/users.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
-import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import exp from 'constants';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -15,7 +16,7 @@ describe('AuthService', () => {
     name: 'teste',
     document: '12345678912',
     email: 'teste@teste.com',
-    password: '123'
+    password: '$2a$11$luRlInIpP2AXnSk2DCOSBOBqPDe4j1xiP09H3it2RUukE.RrXRFca'
   }
 
   const USER_REPOSITORY_TOKEN = getRepositoryToken(User)
@@ -34,7 +35,7 @@ describe('AuthService', () => {
         {
           provide: JwtService,
           useValue: {
-            signAsync: jest.fn(() => 'token'),
+            sign: jest.fn(() => 'token'),
           },
         },
         AuthService
@@ -68,6 +69,29 @@ describe('AuthService', () => {
     it('database error', () => {
       jest.spyOn(authRespository, 'save').mockRejectedValueOnce({ code: '' })
       expect(service.Register(userEntity)).rejects.toBeInstanceOf(InternalServerErrorException)
+    })
+  })
+
+  describe('Login', () => {
+    it('should success', () => {
+      jest.spyOn(authRespository, 'findOne').mockResolvedValueOnce(userEntity)
+      expect(service.Login({ email: userEntity.email, password: 'teste123' })).resolves.toEqual({ access_token: 'token' })
+      expect(authRespository.findOne).toHaveBeenCalledWith({ where: { email: userEntity.email } })
+      expect(authRespository.findOne).toHaveBeenCalledTimes(1)
+    })
+
+    it('user not found', () => {
+      jest.spyOn(authRespository, 'findOne').mockResolvedValueOnce(null)
+      expect(service.Login({ email: userEntity.email, password: 'teste123' })).rejects.toBeInstanceOf(UnauthorizedException)
+      expect(authRespository.findOne).toHaveBeenCalledWith({ where: { email: userEntity.email } })
+      expect(authRespository.findOne).toHaveBeenCalledTimes(1)
+    })
+
+    it('wrong password', () => {
+      jest.spyOn(authRespository, 'findOne').mockResolvedValueOnce(userEntity)
+      expect(service.Login({ email: userEntity.email, password: 'teste12' })).rejects.toBeInstanceOf(UnauthorizedException)
+      expect(authRespository.findOne).toHaveBeenCalledWith({ where: { email: userEntity.email } })
+      expect(authRespository.findOne).toHaveBeenCalledTimes(1)
     })
   })
 });
