@@ -45,7 +45,10 @@ describe('AuthController', () => {
         id: '1',
         name: 'teste',
         email: 'teste@teste.com',
-        document: '12312312312312'
+        document: '12312312312312',
+        balance: 10,
+        payerTransfer: [],
+        payeeTransfer: []
       }
       jest.spyOn(authService, 'Register').mockResolvedValueOnce(user)
       expect(controller.registrate({ password: '123', ...user })).resolves.toBe(user)

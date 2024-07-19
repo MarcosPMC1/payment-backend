@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { CreateTransferDto } from './dto/create-transfer.dto';
-import { User } from 'src/auth/entities/users.entity';
+import { User } from '../auth/entities/users.entity';
 import { Transfer } from './entity/transfer.entity';
 
 @Injectable()

@@ -1,4 +1,4 @@
-import { Transfer } from "src/transfers/entity/transfer.entity";
+import { Transfer } from "../../transfers/entity/transfer.entity";
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('users')

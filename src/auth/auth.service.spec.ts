@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
-import { QueryFailedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { User } from './entities/users.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { BadRequestException, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
-import exp from 'constants';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -16,7 +15,10 @@ describe('AuthService', () => {
     name: 'teste',
     document: '12345678912',
     email: 'teste@teste.com',
-    password: '$2a$11$luRlInIpP2AXnSk2DCOSBOBqPDe4j1xiP09H3it2RUukE.RrXRFca'
+    password: '$2a$11$luRlInIpP2AXnSk2DCOSBOBqPDe4j1xiP09H3it2RUukE.RrXRFca',
+    balance: 10,
+    payeeTransfer: [],
+    payerTransfer: [],
   }
 
   const USER_REPOSITORY_TOKEN = getRepositoryToken(User)
