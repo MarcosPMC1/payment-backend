@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Transfer } from "src/transfers/entity/transfer.entity";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('users')
 export class User{
@@ -16,4 +17,13 @@ export class User{
 
     @Column('varchar')
     password: string
+
+    @Column('numeric')
+    balance: number
+
+    @OneToMany(() => Transfer, transfer => transfer.payeeUser)
+    payeeTransfer: Transfer[]
+
+    @OneToMany(() => Transfer, transfer => transfer.payerUser)
+    payerTransfer: Transfer[]
 }

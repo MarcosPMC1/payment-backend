@@ -29,7 +29,8 @@ export class AuthService {
     async Register(data: UserDto){
         const { password, ...user } = await this.userRepository.save(this.userRepository.create({
             ...data,
-            password: bcrypt.hashSync(data.password, 11)
+            password: bcrypt.hashSync(data.password, 11),
+            balance: 10
         }))
         .catch(err => {
             if (err.code == '23505') {
