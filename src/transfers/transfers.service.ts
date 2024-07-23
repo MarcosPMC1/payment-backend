@@ -28,6 +28,10 @@ export class TransfersService {
                 throw new BadRequestException('Payer not exists')
             }
 
+            if(payer.document.length == 14){
+                throw new BadRequestException('Type of user cant send value, only receive')
+            }
+
             const payee = await userRepository.findOneBy({ id: data.payee })
             if(!payee){
                 throw new BadRequestException('Payee not exists')

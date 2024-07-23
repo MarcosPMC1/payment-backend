@@ -19,7 +19,8 @@ import { TransfersModule } from './transfers/transfers.module';
         password: configService.getOrThrow('POSTGRES_PASSWORD'),
         port: 5432,
         autoLoadEntities: true,
-        synchronize: true
+        synchronize: true,
+        logging: true
       })
     }),
     AuthModule,

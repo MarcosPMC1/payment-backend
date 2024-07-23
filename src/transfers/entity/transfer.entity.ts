@@ -17,9 +17,9 @@ export class Transfer{
 
     @ManyToOne(() => User, user => user.payeeTransfer)
     @JoinColumn({ name: 'payee' })
-    payeeUser: User
+    payeeUser?: User
 
     @ManyToOne(() => User, user => user.payerTransfer)
     @JoinColumn({ name: 'payer' })
-    payerUser: User
+    payerUser?: User
 }
