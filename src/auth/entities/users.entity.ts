@@ -1,8 +1,9 @@
 import { Transfer } from "../../transfers/entity/transfer.entity";
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('users')
 export class User{
+    @Index()
     @PrimaryGeneratedColumn('uuid')
     id: string
 

@@ -30,7 +30,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_DB: "${POSTGRES_DATABASE}"
       PG_DATA: /var/lib/postgresql/data
-    # volumes:
+    volumes:
+      - ./postgresql.conf:/etc/postgresql.conf
     #   - postgres-data:/var/lib/postgresql/data
     networks:
       - payment-network
