@@ -1,26 +1,50 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
 import { TransfersService } from './transfers.service';
-import { DataSource, Repository } from 'typeorm';
+import { BadRequestException } from '@nestjs/common';
+import { EntityManager, Repository } from 'typeorm';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../auth/entities/users.entity'; // Adjust path as per your project
 import { Transfer } from './entity/transfer.entity'; // Adjust path as per your project
 import { CreateTransferDto } from './dto/create-transfer.dto';
-import { getRepositoryToken } from '@nestjs/typeorm';
 
 describe('TransfersService', () => {
   let service: TransfersService;
-  let dataSourceMock: DataSource;
-  let transfersRepositoryMock: Repository<Transfer>;
   let userRepositoryMock: Repository<User>;
+  let transferRepositoryMock: Repository<Transfer>;
+  let entityManagerMock: EntityManager;
+
+  const usersMock: User[] = [
+    {
+      id: '1',
+      document: '89001921086',
+      balance: 200,
+      email: 'teste@teste.com',
+      name: 'teste',
+      password: '123',
+      payeeTransfer: [],
+      payerTransfer: []
+    },
+    {
+      id: '2',
+      document: '12345678901235',
+      balance: 300,
+      email: 'teste@teste.com.br',
+      name: 'teste2',
+      password: '123',
+      payeeTransfer: [],
+      payerTransfer: []
+    }
+  ]
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TransfersService,
         {
-          provide: DataSource,
+          provide: getRepositoryToken(User),
           useValue: {
-            transaction: jest.fn(),
+            findOneBy: jest.fn(),
+            save: jest.fn()
           },
         },
         {
@@ -28,87 +52,103 @@ describe('TransfersService', () => {
           useClass: Repository,
         },
         {
-          provide: getRepositoryToken(User),
-          useClass: Repository,
+          provide: EntityManager,
+          useValue: {
+            transaction: jest.fn(),
+            save: jest.fn(),
+          },
         },
       ],
     }).compile();
 
     service = module.get<TransfersService>(TransfersService);
-    dataSourceMock = module.get<DataSource>(DataSource);
-    transfersRepositoryMock = module.get<Repository<Transfer>>(getRepositoryToken(Transfer));
     userRepositoryMock = module.get<Repository<User>>(getRepositoryToken(User));
+    transferRepositoryMock = module.get<Repository<Transfer>>(getRepositoryToken(Transfer));
+    entityManagerMock = module.get<EntityManager>(EntityManager);
   });
 
-  it('should transfer balance from payer to payee', async () => {
-    const data: CreateTransferDto = {
-      payer: '1',
-      payee: '2',
-      value: 100,
-    };
+  describe('saveTransfer', () => {
+    it('should success', async () => {
+      const data: CreateTransferDto = {
+        payer: '1',
+        payee: '2',
+        value: 100,
+      };
 
-    // Mock UserRepository findOne behavior
-    userRepositoryMock.findOne = jest.fn().mockResolvedValueOnce({ id: '1', balance: 200 });
-    userRepositoryMock.findOne = jest.fn().mockResolvedValueOnce({ id: '2', balance: 300 });
+      jest.spyOn(userRepositoryMock, 'findOneBy').mockResolvedValueOnce(usersMock[0]);
+      jest.spyOn(userRepositoryMock, 'findOneBy').mockResolvedValueOnce(usersMock[1]);
 
-    // Mock save method of UserRepository
-    userRepositoryMock.save = jest.fn().mockResolvedValueOnce({ id: '1', balance: 100 }); // Updated payer balance
-    userRepositoryMock.save = jest.fn().mockResolvedValueOnce({ id: '2', balance: 400 }); // Updated payee balance
+      await expect(service.saveTransfer(data)).resolves.not.toThrow();
 
-    // Mock save method of TransfersRepository
-    transfersRepositoryMock.save = jest.fn().mockResolvedValueOnce({ id: '1', payer: '1', payee: '2', value: 100 });
-
-    // Mock transaction method of DataSource to execute callback with mocked entities
-    jest.spyOn(dataSourceMock, 'transaction').mockImplementation(async (callback) => {
-      await callback({
-        getRepository: (entity: any) => {
-          if (entity === User) {
-            return userRepositoryMock;
-          } else if (entity === Transfer) {
-            return transfersRepositoryMock;
-          }
-        },
-      });
+      expect(userRepositoryMock.findOneBy).toHaveBeenCalledTimes(2);
+      expect(userRepositoryMock.findOneBy).toHaveBeenCalledWith({ id: '1'});
+      expect(userRepositoryMock.findOneBy).toHaveBeenCalledWith({ id: '2'});
     });
 
-    // Execute saveTransfer and expect no exception
-    await expect(service.saveTransfer(data)).resolves.not.toThrow();
+    it('verify payee and payer equal', async () => {
+      const data: CreateTransferDto = {
+        payer: '1',
+        payee: '1',
+        value: 100,
+      };
 
-    // Verify UserRepository findOne method calls
-    expect(userRepositoryMock.findOne).toHaveBeenCalledTimes(2);
-    expect(userRepositoryMock.findOne).toHaveBeenCalledWith({ id: '1' });
-    expect(userRepositoryMock.findOne).toHaveBeenCalledWith({ id: '2' });
+      await expect(service.saveTransfer(data)).rejects.toThrow(BadRequestException);
 
-    // Verify UserRepository save method calls
-    expect(userRepositoryMock.save).toHaveBeenCalledTimes(2);
-    expect(userRepositoryMock.save).toHaveBeenCalledWith({ id: '1', balance: 100 });
-    expect(userRepositoryMock.save).toHaveBeenCalledWith({ id: '2', balance: 400 });
+      expect(userRepositoryMock.save).not.toHaveBeenCalled();
+    });
 
-    // Verify TransfersRepository save method call
-    expect(transfersRepositoryMock.save).toHaveBeenCalledTimes(1);
-    expect(transfersRepositoryMock.save).toHaveBeenCalledWith({ payer: '1', payee: '2', value: 100 });
-  });
+    it('verify payer exists', () => {
+      const data: CreateTransferDto = {
+        payer: '0',
+        payee: '2',
+        value: 100,
+      };
 
-  it('should throw BadRequestException when payer and payee are the same', async () => {
-    const data: CreateTransferDto = {
-      payer: '1',
-      payee: '1',
-      value: 100,
-    };
+      jest.spyOn(userRepositoryMock, 'findOneBy').mockResolvedValueOnce(null)
+      expect(service.saveTransfer(data)).rejects.toThrow(BadRequestException)
+    })
 
-    // Execute saveTransfer and expect BadRequestException
-    await expect(service.saveTransfer(data)).rejects.toThrow(BadRequestException);
+    it('verify payer is valid user to send', () => {
+      const data: CreateTransferDto = {
+        payer: '2',
+        payee: '1',
+        value: 100,
+      };
 
-    // Verify UserRepository findOne method calls
-    expect(userRepositoryMock.findOne).toHaveBeenCalledTimes(1);
-    expect(userRepositoryMock.findOne).toHaveBeenCalledWith({ id: '1' });
+      jest.spyOn(userRepositoryMock, 'findOneBy').mockResolvedValueOnce(usersMock[1])
+      expect(service.saveTransfer(data)).rejects.toThrow(BadRequestException)
+    })
 
-    // Verify UserRepository save method was not called
-    expect(userRepositoryMock.save).not.toHaveBeenCalled();
+    it('verify payer have balance', () => {
+      const data: CreateTransferDto = {
+        payer: '1',
+        payee: '2',
+        value: 300,
+      };
 
-    // Verify TransfersRepository save method was not called
-    expect(transfersRepositoryMock.save).not.toHaveBeenCalled();
-  });
+      jest.spyOn(userRepositoryMock, 'findOneBy').mockResolvedValueOnce(usersMock[0])
+      expect(service.saveTransfer(data)).rejects.toThrow(BadRequestException)
+    })
 
-  // Add more test cases to cover other scenarios (e.g., user not exists, insufficient balance, etc.)
+    it('verify payee exists', () => {
+      const data: CreateTransferDto = {
+        payer: '1',
+        payee: '0',
+        value: 100,
+      };
+
+      jest.spyOn(userRepositoryMock, 'findOneBy').mockResolvedValueOnce(usersMock[0])
+      jest.spyOn(userRepositoryMock, 'findOneBy').mockResolvedValueOnce(null)
+      expect(service.saveTransfer(data)).rejects.toThrow(BadRequestException)
+    })
+  })
+
+  describe('listTransfers', () => {
+    it('should success', () => {
+      jest.spyOn(transferRepositoryMock, 'find').mockResolvedValueOnce([])
+      expect(service.listTransfers()).resolves.toEqual([])
+      expect(transferRepositoryMock.find).toHaveBeenCalled()
+    })
+  })
+
 });
