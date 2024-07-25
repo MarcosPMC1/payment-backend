@@ -16,6 +16,7 @@ services:
     restart: unless-stopped
     depends_on:
       - bd
+      - redis
     networks:
       - payment-network
     deploy:
@@ -33,6 +34,10 @@ services:
     volumes:
       - ./postgresql.conf:/etc/postgresql.conf
     #   - postgres-data:/var/lib/postgresql/data
+    networks:
+      - payment-network
+  redis:
+    image: redis:alpine
     networks:
       - payment-network
   nginx:
