@@ -45,7 +45,6 @@ services:
       - api
     networks:
       - payment-network
-    
 
 volumes:
   postgres-data:
