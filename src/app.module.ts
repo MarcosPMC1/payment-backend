@@ -5,6 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { TransfersModule } from './transfers/transfers.module';
+import { BullModule } from '@nestjs/bull';
+import { FastifyAdapter } from '@bull-board/fastify';
+import { BullBoardModule } from '@bull-board/nestjs';
 
 @Module({
   imports: [
@@ -22,6 +25,23 @@ import { TransfersModule } from './transfers/transfers.module';
         synchronize: true,
         logging: true
       })
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        redis: {
+          host: configService.getOrThrow('REDIS_HOST'),
+          port: configService.getOrThrow('REDIS_PORT')
+        },
+        defaultJobOptions: {
+          attempts: 2,
+        }
+      })
+    }),
+    BullBoardModule.forRoot({
+      adapter: FastifyAdapter,
+      route: '/queue'
     }),
     AuthModule,
     TransfersModule
