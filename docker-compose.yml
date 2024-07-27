@@ -8,8 +8,6 @@ services:
       context: .
       target: "${NODE_ENV}"
       dockerfile: Dockerfile
-    # ports:
-      # - 3000-30001:3000
     volumes:
       - ./:/usr/src/app
       - /usr/src/app/node_modules
@@ -33,7 +31,6 @@ services:
       PG_DATA: /var/lib/postgresql/data
     volumes:
       - ./postgresql.conf:/etc/postgresql.conf
-    #   - postgres-data:/var/lib/postgresql/data
     networks:
       - payment-network
   redis:
